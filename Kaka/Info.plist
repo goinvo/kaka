@@ -26,5 +26,7 @@
 	<true/>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSScreenCaptureUsageDescription</key>
+	<string>Kaka needs Screen Recording permission to detect window positions of other apps so it can overlay only the distracting windows instead of your entire screen.</string>
 </dict>
 </plist>

@@ -13,6 +13,7 @@
 		E81234560004 /* PoopOverlayWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = E81234550004 /* PoopOverlayWindow.swift */; };
 		E81234560005 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E81234550005 /* MenuBarView.swift */; };
 		E81234560006 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E81234550006 /* Assets.xcassets */; };
+		E81234560007 /* WindowTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E81234550009 /* WindowTracker.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -25,6 +26,7 @@
 		E81234550006 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E81234550007 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E81234550008 /* Kaka.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Kaka.entitlements; sourceTree = "<group>"; };
+		E81234550009 /* WindowTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowTracker.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,6 +56,7 @@
 				E81234550003 /* FocusManager.swift */,
 				E81234550004 /* PoopOverlayWindow.swift */,
 				E81234550005 /* MenuBarView.swift */,
+				E81234550009 /* WindowTracker.swift */,
 				E81234550006 /* Assets.xcassets */,
 				E81234550007 /* Info.plist */,
 				E81234550008 /* Kaka.entitlements */,
@@ -143,6 +146,7 @@
 				E81234560003 /* FocusManager.swift in Sources */,
 				E81234560004 /* PoopOverlayWindow.swift in Sources */,
 				E81234560005 /* MenuBarView.swift in Sources */,
+				E81234560007 /* WindowTracker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -2,6 +2,9 @@ import Cocoa
 import SwiftUI
 
 class PoopOverlayWindow: NSWindow {
+    var trackedWindowID: CGWindowID?
+
+    /// Initialize with a full screen (fallback mode)
     init(screen: NSScreen) {
         super.init(
             contentRect: screen.frame,
@@ -10,6 +13,23 @@ class PoopOverlayWindow: NSWindow {
             defer: false
         )
 
+        setupWindow()
+    }
+
+    /// Initialize with an arbitrary frame to cover a specific window
+    init(frame: CGRect, trackedWindowID: CGWindowID? = nil) {
+        super.init(
+            contentRect: frame,
+            styleMask: .borderless,
+            backing: .buffered,
+            defer: false
+        )
+
+        self.trackedWindowID = trackedWindowID
+        setupWindow()
+    }
+
+    private func setupWindow() {
         self.level = .floating
         self.backgroundColor = NSColor(calibratedRed: 0.6, green: 0.4, blue: 0.2, alpha: 0.95)
         self.isOpaque = false
@@ -19,6 +39,11 @@ class PoopOverlayWindow: NSWindow {
 
         let hostingView = NSHostingView(rootView: PoopOverlayView(window: self))
         self.contentView = hostingView
+    }
+
+    /// Update the overlay frame to match a moved/resized window
+    func updateFrame(_ newFrame: CGRect) {
+        self.setFrame(newFrame, display: true, animate: false)
     }
 
     func show() {
@@ -86,6 +111,9 @@ struct PoopOverlayView: View {
                     showMessage = true
                 }
             }
+            .onChange(of: geometry.size) { newSize in
+                generatePoops(in: newSize)
+            }
         }
     }
 
@@ -94,8 +122,8 @@ struct PoopOverlayView: View {
         var newPoops: [PoopEmoji] = []
 
         // Generate a grid of poops with some randomness
-        let columns = Int(size.width / 80)
-        let rows = Int(size.height / 80)
+        let columns = max(1, Int(size.width / 80))
+        let rows = max(1, Int(size.height / 80))
 
         for row in 0..<rows {
             for col in 0..<columns {

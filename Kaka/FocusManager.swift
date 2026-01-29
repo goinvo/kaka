@@ -22,9 +22,12 @@ class FocusManager: ObservableObject {
     @Published var isFocusActive: Bool = false
     @Published var isDistracted: Bool = false
 
-    private var overlayWindows: [PoopOverlayWindow] = []
+    private var overlayWindows: [CGWindowID: PoopOverlayWindow] = [:]
+    private var fullScreenOverlays: [PoopOverlayWindow] = []
     private var workspaceObserver: NSObjectProtocol?
     private var timer: Timer?
+    private var windowTrackingTimer: Timer?
+    private var currentDistractingPID: pid_t?
 
     init() {
         loadRunningApps()
@@ -36,6 +39,7 @@ class FocusManager: ObservableObject {
             NSWorkspace.shared.notificationCenter.removeObserver(observer)
         }
         timer?.invalidate()
+        windowTrackingTimer?.invalidate()
     }
 
     func loadRunningApps() {
@@ -82,7 +86,8 @@ class FocusManager: ObservableObject {
 
         // Check if user switched away from focus app
         if activatedBundleId != selectedBundleId {
-            showPoopOverlays()
+            currentDistractingPID = activatedApp.processIdentifier
+            showWindowOverlays(forPID: activatedApp.processIdentifier)
             isDistracted = true
         } else {
             hidePoopOverlays()
@@ -107,22 +112,95 @@ class FocusManager: ObservableObject {
         hidePoopOverlays()
     }
 
-    func showPoopOverlays() {
+    func showWindowOverlays(forPID pid: pid_t) {
         hidePoopOverlays()
 
-        // Get all screens
+        let windows = WindowTracker.shared.getWindows(forPID: pid)
+
+        if windows.isEmpty {
+            // Fall back to full-screen overlay if no windows found (likely permission issue)
+            showFullScreenOverlays()
+            return
+        }
+
+        // Create overlay for each window
+        for trackedWindow in windows {
+            let overlay = PoopOverlayWindow(frame: trackedWindow.frame, trackedWindowID: trackedWindow.windowID)
+            overlay.show()
+            overlayWindows[trackedWindow.windowID] = overlay
+        }
+
+        // Start window tracking timer
+        startWindowTracking()
+    }
+
+    func showFullScreenOverlays() {
         for screen in NSScreen.screens {
             let overlay = PoopOverlayWindow(screen: screen)
             overlay.show()
-            overlayWindows.append(overlay)
+            fullScreenOverlays.append(overlay)
         }
     }
 
     func hidePoopOverlays() {
-        for window in overlayWindows {
+        // Stop window tracking
+        windowTrackingTimer?.invalidate()
+        windowTrackingTimer = nil
+        currentDistractingPID = nil
+
+        // Hide window-specific overlays
+        for (_, window) in overlayWindows {
             window.hide()
         }
         overlayWindows.removeAll()
+
+        // Hide full-screen overlays
+        for window in fullScreenOverlays {
+            window.hide()
+        }
+        fullScreenOverlays.removeAll()
+    }
+
+    private func startWindowTracking() {
+        windowTrackingTimer?.invalidate()
+
+        windowTrackingTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            self?.updateOverlayPositions()
+        }
+    }
+
+    private func updateOverlayPositions() {
+        guard let pid = currentDistractingPID else { return }
+
+        let currentWindows = WindowTracker.shared.getWindows(forPID: pid)
+        let currentWindowIDs = Set(currentWindows.map { $0.windowID })
+
+        // Remove overlays for windows that no longer exist
+        let staleWindowIDs = Set(overlayWindows.keys).subtracting(currentWindowIDs)
+        for windowID in staleWindowIDs {
+            overlayWindows[windowID]?.hide()
+            overlayWindows.removeValue(forKey: windowID)
+        }
+
+        // Update positions for existing windows and add new ones
+        for trackedWindow in currentWindows {
+            if let existingOverlay = overlayWindows[trackedWindow.windowID] {
+                // Update position if changed
+                if existingOverlay.frame != trackedWindow.frame {
+                    existingOverlay.updateFrame(trackedWindow.frame)
+                }
+            } else {
+                // New window appeared - create overlay for it
+                let overlay = PoopOverlayWindow(frame: trackedWindow.frame, trackedWindowID: trackedWindow.windowID)
+                overlay.show()
+                overlayWindows[trackedWindow.windowID] = overlay
+            }
+        }
+
+        // If all windows closed, fall back to full screen
+        if overlayWindows.isEmpty && fullScreenOverlays.isEmpty {
+            showFullScreenOverlays()
+        }
     }
 
     func returnToFocusApp() {
